@@ -1,207 +1,193 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="initial-scale=1,maximum-scale=1,user-scalable=no"
-    />
- 
-    <title>High flood contributor</title>
 
-    <link
-      rel="stylesheet"
-      href="https://js.arcgis.com/4.13/esri/themes/light/main.css"
-    />
-    <script>
-      const options = {
-          dojoConfig: {
-              async: true,
-          packages: [
-              {
-                  location: 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.js',
-                  name: 'Chart'
-              }
-          ]
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <title>High flood contributor</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.13/esri/themes/light/main.css" />
+  <script>
+    const options = {
+      dojoConfig: {
+        async: true,
+        packages: [
+          {
+            location: 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.js',
+            name: 'Chart'
           }
-      };
-     </script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+        ]
+      }
+    };
+  </script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script> -->
-    <script src="https://js.arcgis.com/4.13/"></script>
+  <script src="https://js.arcgis.com/4.13/"></script>
 
 
-    <style>
-      html,
-      body,
-      #viewDiv {
-        padding: 0;
-        margin: 0;
-        height: 100%;
-        width: 100%;
-        display: flex;
-      }
-      #info {
-        color:black;
-        width:10%;
-        height: 5%;
-        z-index: 9999;
-        position: absolute;
-        
-      }
-    </style>
-   <script>
-      require([
-        "esri/Map",
-        "esri/views/MapView",
-        "esri/layers/FeatureLayer",
-        "esri/PopupTemplate",
-        "esri/widgets/Popup",
-        "esri/renderers/UniqueValueRenderer",
-        "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.js",
-      
-      ], function(Map, MapView, FeatureLayer, PopupTemplate, Popup, UniqueValueRenderer, Chart) {
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+  <script>
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/FeatureLayer",
+      "esri/PopupTemplate",
+      "esri/widgets/Popup",
+      "esri/renderers/UniqueValueRenderer",
+      "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.js",
 
-        const RARRBuildings = new FeatureLayer({
-          url:
-            "https://services2.arcgis.com/tUcNZGjl0sYxJaxf/ArcGIS/rest/services/testRARRBldgs/FeatureServer/0",
-          outFields: ["*"]
-          
-        });
+    ], function (Map, MapView, FeatureLayer, PopupTemplate, Popup, UniqueValueRenderer, Chart) {
 
-        const map = new Map({
-          basemap: "topo",
-          layers: [RARRBuildings]
-        });
+      const RARRBuildings = new FeatureLayer({
+        url:
+          "https://services2.arcgis.com/tUcNZGjl0sYxJaxf/ArcGIS/rest/services/testRARRBldgs/FeatureServer/0",
+        outFields: ["*"]
 
-        const view = new MapView({
-          container: "viewDiv",
-          map: map,
-          center: [-80.824563, 35.183508],
-          zoom: 17,
-          popup: {
-            dockEnabled: true,
-            visible: false,
-            dockOptions: {
+      });
+
+      const map = new Map({
+        basemap: "topo",
+        layers: [RARRBuildings]
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-80.824563, 35.183508],
+        zoom: 17,
+        popup: {
+          dockEnabled: true,
+          visible: false,
+          dockOptions: {
             buttonEnabled: true,
             breakpoint: false,
             position: "auto"
+          }
+        }
+      });
+
+
+
+      view.on("click", (e) => {
+        var screenPoint = e.screenPoint;
+        view.hitTest(screenPoint).then(getGrphics)
+        console.log('test')
+      })
+
+      // view
+      //  .then(function(layer){
+      //    layer.then(function(layer){
+      //      var  renderer =layer.renderer.clone()
+      //      renderer.symbole.width =4
+      //      renderer.symbole.color=[255, 255, 255, 0.4]
+      //      layer.renderer = renderer
+      //    })
+      //  })
+
+      function getGrphics(respose) {
+        console.log(respose)
+        const graphic = respose.results[0].graphic;
+        const attributes = graphic.attributes;
+        const Address = attributes.Address;
+        const HCFs = attributes.HCFs;
+        const FloodZone = attributes.FloodZone;
+        const HCFobj = str2obj(HCFs);
+        console.log(HCFobj)
+
+        document.getElementById('info').style.visibility = 'visible'
+        document.getElementById('Address').innerHTML = Address
+
+        view.popup.visible = true;
+        view.popup.open({
+          title: "Highest Contributing Risk Components",
+          content: setContentInfo(HCFobj, Address)
+        })
+
+        var renderer = new UniqueValueRenderer({
+          field: 'Address',
+          defaultSymbole: layer.renderer.symbole || layer.renderer.defaultSymbole,
+          uniqueValueInfos: [{
+            value: Address,
+            symbole: {
+              type: 'simple-fill',
+              color: 'orange',
+              width: 5
+            }
+          }]
+        })
+        layer.renderer = renderer
+      }
+
+
+      const str2obj = str => {
+        return str
+          .split(';')
+          .map(key => {
+            return key
+              .split(',')
+              .map(val => val.trim())
+          })
+          .reduce((accumulator, currentValue) => {
+            accumulator[currentValue[0]] = currentValue[1]
+            return accumulator
+          }, {})
+      }
+
+      function setContentInfo(HCFobj, Address) {
+        // Create a new canvas element, this is where the graph will be placed.
+        var canvas = document.createElement('canvas');
+        canvas.id = "myChart";
+
+        const newArry = Object.values(HCFobj).map((persent) => { return Number(persent) })
+        console.log(newArry)
+        var data = {
+          datasets: [{
+            data: newArry,
+            backgroundColor: ["#ff4500", "#ee7811", "#ffff00", "#4286f4", "#41f4be", "#8b41f4", "#e241f4", "#f44185"]
+          }],
+          labels: Object.keys(HCFobj)
+        };
+
+
+        var myPieChart = new Chart(canvas, {
+          type: 'doughnut',
+          data: data,
+          options: {
+            title: {
+              display: true,
+              text: `${Address}`
             }
           }
         });
 
-      
-
-        // view.ui.add('info', "bottom-right");
-
-        view.on("click",(e)=>{
-          var screenPoint = e.screenPoint;
-          view.hitTest(screenPoint).then(getGrphics)
-          console.log('test')
-        })
-
-        // view
-        //  .then(function(layer){
-        //    layer.then(function(layer){
-        //      var  renderer =layer.renderer.clone()
-        //      renderer.symbole.width =4
-        //      renderer.symbole.color=[255, 255, 255, 0.4]
-        //      layer.renderer = renderer
-        //    })
-        //  })
-
-        function getGrphics(respose){
-          console.log(respose)
-                const graphic = respose.results[0].graphic;
-                const attributes = graphic.attributes;
-                const Address = attributes.Address;
-                const HCFs = attributes.HCFs;
-                const FloodZone = attributes.FloodZone;
-                const HCFobj = str2obj(HCFs);
-                console.log(HCFobj)
-
-                document.getElementById('info').style.visibility='visible'
-                document.getElementById('Address').innerHTML =Address
-       
-               view.popup.visible = true;
-               view.popup.open({
-               title: "Highest Contributing Risk Components",
-              content: setContentInfo(HCFobj, Address)
-          })
-
-                var renderer = new UniqueValueRenderer({
-                   field: 'Address',
-                   defaultSymbole:layer.renderer.symbole || layer.renderer.defaultSymbole,
-                   uniqueValueInfos:[{
-                     value: Address,
-                     symbole: {
-                       type:'simple-fill',
-                       color:'orange',
-                       width:5
-                     }
-                   }]
-                })
-                layer.renderer = renderer
-        }
-
-        
-        const str2obj = str => {
-                  return str
-                      .split(';')
-                       .map(key => {
-                        return key
-                              .split(',')
-                     .map(val => val.trim())
-               })
-                .reduce((accumulator, currentValue) => {
-               accumulator[currentValue[0]] = currentValue[1]
-             return accumulator
-            }, {})
-       }
-
-        function setContentInfo(HCFobj, Address){
-    // Create a new canvas element, this is where the graph will be placed.
-               var canvas = document.createElement('canvas');
-                canvas.id = "myChart";
-    
-    const newArry = Object.values(HCFobj).map((persent)=>{return Number(persent)})
-    console.log(newArry)
-    var data = {
-        datasets:[{
-        data: newArry,
-        backgroundColor: ["#ff4500", "#4286f4", "#41f4be", "#8b41f4", "#e241f4", "#f44185", "#f4cd41"]
-      }],
-      labels: Object.keys(HCFobj)
-    };
-
-    
-    var myPieChart = new Chart(canvas,{
-      type: 'doughnut',
-      data: data,
-      options: {
-        title: {
-          display: true,
-          text : `${Address}`
-        }
+        return canvas;
       }
-  });
-		
-  return canvas;
-  }
 
 
-        
-      });
-    
-       
+
+    });
+
+
 
   </script>
 
-  </head>
-  <body>
-    <div id="viewDiv"></div>
-    <div id="info">
-        <span id="Address"></span> <br />
-      </div>
-  </body>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+  <div id="info">
+    <span id="Address"></span> <br />
+  </div>
+</body>
+
 </html>
