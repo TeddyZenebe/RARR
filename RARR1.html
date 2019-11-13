@@ -39,12 +39,15 @@
         margin: 0;
         height: 100%;
         width: 100%;
+        display: flex;
       }
       #info {
-        background: black;
-        color: white;
-        width:100%;
-        height: 20%;
+        color:black;
+        width:10%;
+        height: 5%;
+        z-index: 9999;
+        position: absolute;
+        
       }
     </style>
    <script>
@@ -89,7 +92,7 @@
 
       
 
-        view.ui.add('info', "bottom-right");
+        // view.ui.add('info', "bottom-right");
 
         view.on("click",(e)=>{
           var screenPoint = e.screenPoint;
@@ -123,7 +126,7 @@
                view.popup.visible = true;
                view.popup.open({
                title: "Highest Contributing Risk Components",
-              content: setContentInfo(HCFobj)
+              content: setContentInfo(HCFobj, Address)
           })
 
                 var renderer = new UniqueValueRenderer({
@@ -156,7 +159,7 @@
             }, {})
        }
 
-        function setContentInfo(HCFobj){
+        function setContentInfo(HCFobj, Address){
     // Create a new canvas element, this is where the graph will be placed.
                var canvas = document.createElement('canvas');
                 canvas.id = "myChart";
@@ -174,7 +177,13 @@
     
     var myPieChart = new Chart(canvas,{
       type: 'doughnut',
-      data: data
+      data: data,
+      options: {
+        title: {
+          display: true,
+          text : `${Address}`
+        }
+      }
   });
 		
   return canvas;
